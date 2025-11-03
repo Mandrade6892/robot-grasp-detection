@@ -91,8 +91,8 @@ def main(gui=True):
         time.sleep(1/240)
 
     # Take one camera snapshot (we'll later feed this into the CNN)
-    view = p.computeViewMatrixFromYawPitchRoll(cam_target, cam_dist, cam_yaw, cam_pitch, 0, 2)
-    proj = p.computeProjectionMatrixFOV(fov, aspect, near, far)
+    viewMatrix = p.computeViewMatrixFromYawPitchRoll(cam_target, cam_dist, cam_yaw, cam_pitch, 0, 2)
+    projectionMatrix = p.computeProjectionMatrixFOV(fov, aspect, near, far)
     
     img_data = p.getCameraImage(
             width, height,
