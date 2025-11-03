@@ -101,8 +101,8 @@ def main(gui=True):
             renderer=p.ER_BULLET_HARDWARE_OPENGL
         )
         # Just some extra useful data
-       # rgp_image =np.reshape(img_data[2],(height, width, 4))[:,:,:3] #RGB
-       # depth_buffer = np.reshape(img_data[3], (height, width)) #depth map
+    rgp_image =np.reshape(img_data[2],(height, width, 4))[:,:,:3] #RGB
+    depth_buffer = np.reshape(img_data[3], (height, width)) #depth map
     
         # Optional: visualize or save snapshot
         #import matplotlib.pyplot as plt
