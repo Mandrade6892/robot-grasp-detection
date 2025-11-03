@@ -2,6 +2,7 @@ import time
 import math
 import pybullet as p
 import pybullet_data
+import numpy as np
 
 def main(gui=True):
     # Start PyBullet
@@ -92,7 +93,22 @@ def main(gui=True):
     # Take one camera snapshot (we'll later feed this into the CNN)
     view = p.computeViewMatrixFromYawPitchRoll(cam_target, cam_dist, cam_yaw, cam_pitch, 0, 2)
     proj = p.computeProjectionMatrixFOV(fov, aspect, near, far)
-    p.getCameraImage(width, height, view, proj)
+    
+    img_data = p.getCameraImage(
+            width, height,
+            viewMatrix=viewMatrix,
+            projectMatrix=projectionMatrix,
+            renderer=p.ER_BULLET_HARDWARE_OPENGL
+        )
+        # Just some extra useful data
+       # rgp_image =np.reshape(img_data[2],(height, width, 4))[:,:,:3] #RGB
+       # depth_buffer = np.reshape(img_data[3], (height, width)) #depth map
+    
+        # Optional: visualize or save snapshot
+        #import matplotlib.pyplot as plt
+        # plt.imshow(rgb_image)
+        # plt.show()
+    
 
     if gui:
         print("Simulation complete. Close the window to finish.")
