@@ -1,8 +1,11 @@
 import time
 import math
+import os
 import pybullet as p
 import pybullet_data
 import numpy as np
+import imageio
+
 
 def main(gui=True):
     # Start PyBullet
@@ -91,18 +94,60 @@ def main(gui=True):
         time.sleep(1/240)
 
     # Take one camera snapshot (we'll later feed this into the CNN)
-    viewMatrix = p.computeViewMatrixFromYawPitchRoll(cam_target, cam_dist, cam_yaw, cam_pitch, 0, 2)
-    projectionMatrix = p.computeProjectionMatrixFOV(fov, aspect, near, far)
-    
+       # --- Camera mounted on the robot hand (eye-in-hand) ---
+
+    # Get end-effector (hand) pose in world coordinates
+    hand_state = p.getLinkState(robot, ee_link)
+    hand_pos = hand_state[0]       # (x, y, z)
+    hand_ori = hand_state[1]       # quaternion (x, y, z, w)
+
+    # Convert orientation to rotation matrix
+    rot = p.getMatrixFromQuaternion(hand_ori)
+    rot = np.array(rot).reshape(3, 3)
+
+    # Define camera "forward" and "up" directions relative to the hand
+    # Here we use the hand's -Z as "forward" and Y as "up" (tweak if needed)
+    forward = -rot[:, 2]  # third column, negated
+    up_vec  =  rot[:, 1]  # second column
+
+    # Camera eye position: a bit above the hand along its forward axis
+    cam_eye = hand_pos + 0.10 * forward  # 10 cm in front of the hand
+    cam_target = hand_pos                # look back at the hand / object
+
+    viewMatrix = p.computeViewMatrix(
+        cameraEyePosition=cam_eye,
+        cameraTargetPosition=cam_target,
+        cameraUpVector=up_vec
+    )
+
+    projectionMatrix = p.computeProjectionMatrixFOV(
+        fov=fov,
+        aspect=aspect,
+        nearVal=near,
+        farVal=far
+    )
+
     img_data = p.getCameraImage(
-            width, height,
-            viewMatrix=viewMatrix,
-            projectMatrix=projectionMatrix,
-            renderer=p.ER_BULLET_HARDWARE_OPENGL
-        )
-        # Just some extra useful data
-    rgp_image =np.reshape(img_data[2],(height, width, 4))[:,:,:3] #RGB
-    depth_buffer = np.reshape(img_data[3], (height, width)) #depth map
+        width,
+        height,
+        viewMatrix=viewMatrix,
+        projectionMatrix=projectionMatrix,
+        renderer=p.ER_BULLET_HARDWARE_OPENGL
+    )
+
+    # Convert to numpy arrays
+    rgba = np.reshape(img_data[2], (height, width, 4)).astype(np.uint8)
+    rgb_image = rgba[:, :, :3]
+
+    # Make sure folder exists
+    os.makedirs("captures", exist_ok=True)
+
+    # Build filename (timestamp so each run is unique)
+    filename = os.path.join("captures", f"ee_cam_{int(time.time())}.png")
+    imageio.imwrite(filename, rgb_image)
+
+    print(f"Saved hand-mounted camera snapshot to: {filename}")
+
     
         # Optional: visualize or save snapshot
         #import matplotlib.pyplot as plt
